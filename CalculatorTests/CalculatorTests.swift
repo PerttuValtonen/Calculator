@@ -9,28 +9,77 @@ import XCTest
 @testable import Calculator
 
 final class CalculatorTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    
+    func testCalculateSum() {
+        let controller = CalculatorController()
+        controller.firstValue = "2"
+        controller.secondValue = "3"
+        controller.calculateSum()
+        XCTAssertEqual(controller.result, 5)
     }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    
+    func testShowAlert() {
+        let controller = CalculatorController()
+        controller.result = 5
+        
+        // Create a mock UIWindow to present the alert
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        
+        //Call showAlert() and make sure the alert is presented
+        controller.showAlert()
+        XCTAssertFalse(window.rootViewController?.presentedViewController is UIAlertController)
+        
+        // Dismiss the alert
+        window.rootViewController?.dismiss(animated: true, completion: nil)
     }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    
+    func testWebLinkAsync() async throws {
+        // Create a URL for a webpage to download
+        let url = URL(string: "https://bstackdemo.com")!
+        
+        // Use an asynchronous function to download the webpage
+        let dataAndResponse: (data: Data, response: URLResponse) = try await URLSession.shared.data(from: url, delegate: nil)
+        
+        // Assert that the actual response matches the expected response
+        let httpResponse = try XCTUnwrap(dataAndResponse.response as? HTTPURLResponse, "Expected an HTTPURLResponse.")
+        XCTAssertEqual(httpResponse.statusCode, 200, "Expected a 200 OK response.")
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    
+    func testCalculateSumAsync() {
+        let controller = CalculatorController()
+        controller.firstValue = "2"
+        controller.secondValue = "3"
+        
+        let expectation = XCTestExpectation(description: "calculateSum() completes")
+        
+        DispatchQueue.main.async {
+            controller.calculateSum()
+            XCTAssertEqual(controller.result, 5)
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 5.0)
+    }
+    
+    class MockCalculatorController: CalculatorController {
+        var calculateSumCalled = false
+        
+        override func calculateSum() {
+            calculateSumCalled = true
+            result = 5
         }
     }
-
+    
+    func testCalculateSumWithMock() {
+        let controller = MockCalculatorController()
+        controller.firstValue = "2"
+        controller.secondValue = "3"
+        
+        controller.calculateSum()
+        
+        XCTAssertTrue(controller.calculateSumCalled)
+        XCTAssertEqual(controller.result, 5)
+    }
 }
